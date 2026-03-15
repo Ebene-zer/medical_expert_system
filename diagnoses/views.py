@@ -48,12 +48,26 @@ def kb_manager_view(request):
             if name:
                 Disease.objects.get_or_create(name=name, defaults={'description': desc})
         elif action == "add_rule":
-            disease_id = request.POST.get('disease')
-            symptom_ids = request.POST.getlist('symptoms')
-            if disease_id and symptom_ids:
-                rule, _ = Rule.objects.get_or_create(disease_id=disease_id)
-                rule.symptoms.set(symptom_ids)
-                rule.save()
+            if not request.user.is_superuser:
+                from django.contrib import messages
+                messages.error(request, "Only top-level Medical Experts (Superusers) can establish diagnostic rules.")
+            else:
+                disease_id = request.POST.get('disease')
+                symptom_ids = request.POST.getlist('symptoms')
+                verified = request.POST.get('expert_verified') == 'on'
+                
+                if not verified:
+                    from django.contrib import messages
+                    messages.warning(request, "Please verify that this rule follows medical standards.")
+                elif disease_id and symptom_ids:
+                    rule, _ = Rule.objects.get_or_create(disease_id=disease_id)
+                    rule.symptoms.set(symptom_ids)
+                    rule.save()
+                    from django.contrib import messages
+                    messages.success(request, f"Inference rules for {rule.disease.name} updated successfully.")
+                else:
+                    from django.contrib import messages
+                    messages.error(request, "A rule must have at least one symptom.")
                 
     diseases = Disease.objects.all()
     symptoms = Symptom.objects.all()
