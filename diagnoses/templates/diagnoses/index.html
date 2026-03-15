@@ -26,6 +26,12 @@
                         {% endfor %}
                     </div>
 
+                    <!-- Dynamic Suggestions -->
+                    <div id="suggestions-container" class="mb-4 d-none">
+                        <h6 class="text-accent small fw-bold mb-2">Recommended to Check:</h6>
+                        <div id="suggestions-list" class="d-flex flex-wrap gap-2"></div>
+                    </div>
+
                     <button type="submit"
                         class="btn btn-modern w-100 py-3 mt-2 shadow-sm d-flex justify-content-center align-items-center">
                         Analyze Symptoms
@@ -34,14 +40,18 @@
             </div>
         </div>
 
-        <!-- Right Column: Results -->
         <div class="col-lg-7">
             {% if diagnoses %}
-            <div class="results-header mb-4 animate-fade-in-up" style="animation-delay: 0.2s;">
-                <h3 class="mb-1 d-flex align-items-center">
-                    Inference Results
-                </h3>
-                <p class="text-muted-custom">Based on your input, here are the potential matches sorted by confidence.</p>
+            <div class="results-header mb-4 animate-fade-in-up d-flex justify-content-between align-items-end" style="animation-delay: 0.2s;">
+                <div>
+                    <h3 class="mb-1 d-flex align-items-center">
+                        Inference Results
+                    </h3>
+                    <p class="text-muted-custom mb-0">Based on your input, here are the potential matches sorted by confidence.</p>
+                </div>
+                <button type="button" onclick="exportReport()" class="btn btn-outline-light btn-sm rounded-pill px-3">
+                    <i class="bi bi-download me-1"></i> Export Report
+                </button>
             </div>
 
             <div class="diagnoses-list">
@@ -51,9 +61,15 @@
                     <!-- Header: Disease name and confidence -->
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <h4 class="mb-0 text-white">{{ d.disease }}</h4>
-                        <div
-                            class="confidence-badge {% if d.confidence >= 80 %}high{% elif d.confidence >= 50 %}medium{% else %}low{% endif %}">
-                            {{ d.confidence }}% Match
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="confidence-badge {% if d.confidence >= 80 %}high{% elif d.confidence >= 50 %}medium{% else %}low{% endif %}">
+                                {{ d.confidence }}% Match
+                            </div>
+                            <button type="button" class="btn btn-link p-0 text-muted" 
+                                    data-bs-toggle="tooltip" data-bs-placement="top" data-bs-html="true"
+                                    title="<b>Reasoning:</b><br>{{ d.matched_symptoms|length }} matched out of {{ d.matched_symptoms|length|add:d.missing_symptoms|length }} required symptoms for this rule.">
+                                <i class="bi bi-info-circle"></i>
+                            </button>
                         </div>
                     </div>
 
@@ -115,4 +131,117 @@
 
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Initialize Tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl)
+    })
+
+    function exportReport() {
+        const selectedSymptoms = [];
+        document.querySelectorAll('.symptom-pill input:checked').forEach(input => {
+            selectedSymptoms.push(input.nextElementSibling.innerText.trim());
+        });
+
+        let content = "MEDICAL DIAGNOSIS EXPERT SYSTEM - CASE REPORT\n";
+        content += "==============================================\n";
+        content += `Timestamp: ${new Date().toLocaleString()}\n\n`;
+        content += "SELECTED SYMPTOMS:\n";
+        if (selectedSymptoms.length > 0) {
+            selectedSymptoms.forEach(s => content += `- ${s}\n`);
+        } else {
+            content += "None selected.\n";
+        }
+        
+        content += "\nDIAGNOSTIC INFERENCE RESULTS:\n";
+        content += "-----------------------------\n";
+        
+        document.querySelectorAll('.diagnosis-item').forEach(item => {
+            const disease = item.querySelector('h4').innerText;
+            const confidence = item.querySelector('.confidence-badge').innerText;
+            content += `\nDisease: ${disease}\n`;
+            content += `Confidence: ${confidence}\n`;
+            
+            const matched = Array.from(item.querySelectorAll('.badge-matched')).map(b => b.innerText.trim());
+            const missing = Array.from(item.querySelectorAll('.badge-missing')).map(b => b.innerText.trim());
+            
+            content += `Matched Symptoms: ${matched.join(", ") || "None"}\n`;
+            content += `Missing Symptoms: ${missing.join(", ") || "None"}\n`;
+        });
+
+        content += "\n==============================================\n";
+        content += "End of Report. Academic Submission 2026.\n";
+
+        const blob = new Blob([content], { type: 'text/plain' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `Medical_Diagnosis_Report_${new Date().toISOString().slice(0,10)}.txt`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+    }
+    const kb = JSON.parse('{{ kb_json|safe }}');
+
+    function updateSuggestions() {
+        const selected = Array.from(document.querySelectorAll('.symptom-pill input:checked'))
+                            .map(input => input.nextElementSibling.innerText.trim());
+        
+        const suggestionsContainer = document.getElementById('suggestions-container');
+        const suggestionsList = document.getElementById('suggestions-list');
+        
+        if (selected.length === 0) {
+            suggestionsContainer.classList.add('d-none');
+            return;
+        }
+
+        const counts = {};
+        kb.forEach(rule => {
+            const hasMatch = rule.symptoms.some(s => selected.includes(s));
+            if (hasMatch) {
+                rule.symptoms.forEach(s => {
+                    if (!selected.includes(s)) {
+                        counts[s] = (counts[s] || 0) + 1;
+                    }
+                });
+            }
+        });
+
+        const sortedSuggestions = Object.keys(counts).sort((a,b) => counts[b] - counts[a]).slice(0, 5);
+        
+        if (sortedSuggestions.length > 0) {
+            suggestionsContainer.classList.remove('d-none');
+            suggestionsList.innerHTML = sortedSuggestions.map(s => `
+                <span class="badge rounded-pill bg-dark text-accent border border-accent opacity-75" style="cursor: pointer;" onclick="autoSelectSymptom('${s}')">
+                    + ${s}
+                </span>
+            `).join('');
+        } else {
+            suggestionsContainer.classList.add('d-none');
+        }
+    }
+
+    function autoSelectSymptom(name) {
+        document.querySelectorAll('.symptom-pill label').forEach(label => {
+            if (label.innerText.trim() === name) {
+                const input = document.getElementById(label.getAttribute('for'));
+                if (input && !input.checked) {
+                    input.checked = true;
+                    updateSuggestions();
+                }
+            }
+        });
+    }
+
+    document.querySelectorAll('.symptom-pill input').forEach(input => {
+        input.addEventListener('change', updateSuggestions);
+    });
+
+    // Initial run
+    updateSuggestions();
+</script>
 {% endblock %}

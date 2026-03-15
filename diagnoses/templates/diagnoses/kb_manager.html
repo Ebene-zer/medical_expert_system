@@ -1,0 +1,191 @@
+{% extends "diagnoses/base.html" %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="glass-card animate-fade-in-up">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="mb-0">Knowledge Base Manager</h2>
+            <a href="{% url 'diagnoses:index' %}" class="btn btn-outline-light btn-sm rounded-pill">
+                <i class="bi bi-arrow-left me-1"></i> Back to Diagnosis
+            </a>
+        </div>
+
+        <div class="row g-4">
+            <!-- Sidebar: Navigation -->
+            <div class="col-md-3">
+                <div class="list-group list-group-flush custom-list-group">
+                    <button class="list-group-item list-group-item-action active" data-bs-toggle="pill" data-bs-target="#tab-diseases">Diseases</button>
+                    <button class="list-group-item list-group-item-action" data-bs-toggle="pill" data-bs-target="#tab-symptoms">Symptoms</button>
+                    <button class="list-group-item list-group-item-action" data-bs-toggle="pill" data-bs-target="#tab-rules">Diagnostic Rules</button>
+                </div>
+            </div>
+
+            <!-- Content: Tables and Forms -->
+            <div class="col-md-9">
+                <div class="tab-content">
+                    
+                    <!-- Diseases Tab -->
+                    <div class="tab-pane fade show active" id="tab-diseases">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h4>Managed Diseases</h4>
+                            <button class="btn btn-accent btn-sm" data-bs-toggle="collapse" data-bs-target="#add-disease-form">
+                                <i class="bi bi-plus-lg"></i> Add Disease
+                            </button>
+                        </div>
+                        
+                        <div class="collapse mb-4" id="add-disease-form">
+                            <form method="post" class="p-3 border border-secondary rounded glass-card">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="add_disease">
+                                <div class="mb-3">
+                                    <input type="text" name="name" class="form-control form-control-sm" placeholder="Disease Name" required>
+                                </div>
+                                <div class="mb-3">
+                                    <textarea name="description" class="form-control form-control-sm" placeholder="Description"></textarea>
+                                </div>
+                                <button type="submit" class="btn btn-success btn-sm w-100">Save Disease</button>
+                            </form>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-dark table-hover align-middle">
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Description</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for d in diseases %}
+                                    <tr>
+                                        <td><span class="fw-bold text-accent">{{ d.name }}</span></td>
+                                        <td class="small">{{ d.description }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Symptoms Tab -->
+                    <div class="tab-pane fade" id="tab-symptoms">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h4>Managed Symptoms</h4>
+                            <button class="btn btn-accent btn-sm" data-bs-toggle="collapse" data-bs-target="#add-symptom-form">
+                                <i class="bi bi-plus-lg"></i> Add Symptom
+                            </button>
+                        </div>
+
+                        <div class="collapse mb-4" id="add-symptom-form">
+                            <form method="post" class="p-3 border border-secondary rounded glass-card">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="add_symptom">
+                                <div class="mb-3">
+                                    <input type="text" name="name" class="form-control form-control-sm" placeholder="Symptom Name" required>
+                                </div>
+                                <button type="submit" class="btn btn-modern btn-sm w-100">Save Symptom</button>
+                            </form>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-dark table-hover align-middle">
+                                <thead>
+                                    <tr>
+                                        <th>Symptom Name</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for s in symptoms %}
+                                    <tr>
+                                        <td>{{ s.name }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Rules Tab -->
+                    <div class="tab-pane fade" id="tab-rules">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h4>Diagnostic Rules</h4>
+                            <button class="btn btn-accent btn-sm" data-bs-toggle="collapse" data-bs-target="#add-rule-form">
+                                <i class="bi bi-plus-lg"></i> Add Rule
+                            </button>
+                        </div>
+
+                        <div class="collapse mb-4" id="add-rule-form">
+                            <form method="post" class="p-3 border border-secondary rounded glass-card">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="add_rule">
+                                <div class="mb-3">
+                                    <label class="form-label small text-muted">Select Disease</label>
+                                    <select name="disease" class="form-select form-select-sm" required>
+                                        {% for d in diseases %}
+                                        <option value="{{ d.id }}">{{ d.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label small text-muted">Select Symptoms (Hold Ctrl/Cmd to multi-select)</label>
+                                    <select name="symptoms" class="form-select form-select-sm" multiple required style="height: 120px;">
+                                        {% for s in symptoms %}
+                                        <option value="{{ s.id }}">{{ s.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <button type="submit" class="btn btn-modern btn-sm w-100">Establish Rule</button>
+                            </form>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-dark table-hover align-middle">
+                                <thead>
+                                    <tr>
+                                        <th>Disease</th>
+                                        <th>Required Symptoms</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for r in rules %}
+                                    <tr>
+                                        <td><span class="badge bg-primary">{{ r.disease.name }}</span></td>
+                                        <td>
+                                            {% for s in r.symptoms.all %}
+                                            <span class="badge bg-secondary rounded-pill small">{{ s.name }}</span>
+                                            {% endfor %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+        
+        <div class="mt-4 p-3 border-top border-secondary opacity-50 text-center">
+            <small class="text-muted">Note: Direct database modification is restricted to Admin. Use Django Admin for full CRUD operations.</small>
+        </div>
+    </div>
+</div>
+
+<style>
+.custom-list-group .list-group-item {
+    background: transparent;
+    color: var(--text-muted);
+    border: none;
+    border-left: 3px solid transparent;
+    transition: all 0.2s;
+}
+.custom-list-group .list-group-item.active {
+    background: var(--accent-glow);
+    color: var(--accent-primary);
+    border-left-color: var(--accent-primary);
+}
+.table-dark {
+    --bs-table-bg: transparent;
+    --bs-table-color: var(--text-main);
+    --bs-table-border-color: var(--border-color);
+}
+</style>
+{% endblock %}

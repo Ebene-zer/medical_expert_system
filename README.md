@@ -5,10 +5,10 @@ An academic-focused, web-based expert system designed to demonstrate AI forward 
 ## 🚀 Key Features
 
 - **AI Inference Engine**: Implements a forward chaining algorithm in Python to match user symptoms against a clinical knowledge base.
-- **Academic UI**: A 2026-standard, intuitive interface built with Bootstrap 5, featuring:
-  - **Interactive Symptom Selection**: A grid of selectable pills for fast input.
-  - **Dynamic Reasoning**: Visualizes results with confidence scores and explicit "Matched" vs "Missing" symptom lists.
-  - **Glassmorphism Design**: Minimalistic, professional dark-mode aesthetic.
+- **Iterative Inference & Dynamic Suggestions**: The UI actively suggests relevant symptoms based on current selections to guide the user toward a narrower diagnosis.
+- **Explainability Facility**: Integrated "Reasoning Tooltips" that show exactly how many symptoms matched versus the total required for any given diagnosis.
+- **Exportable Case Reports**: Allows users to download a professional diagnostic summary as a text file for documentation.
+- **Knowledge Base Manager**: A dedicated administration interface to add/edit diseases, symptoms, and diagnostic rules without leaving the application.
 - **Static Knowledge Base**: Seeded data featuring Common Cold, Flu, Malaria, Typhoid, Food Poisoning, and Allergies.
 
 ## 🛠️ Technology Stack
