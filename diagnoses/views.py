@@ -3,6 +3,13 @@ from diagnoses.forms import SymptomForm
 from .inference_engine import diagnose
 from .models import Rule, Symptom
 import json
+from django.contrib.auth.signals import user_logged_in
+from django.dispatch import receiver
+from django.contrib import messages
+
+@receiver(user_logged_in)
+def on_user_logged_in(sender, request, user, **kwargs):
+    messages.success(request, f"Welcome, {user.username}. Logged in successfully.")
 
 def diagnose_view(request):
     diagnoses = None

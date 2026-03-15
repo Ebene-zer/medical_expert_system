@@ -3,18 +3,6 @@
 {% block content %}
 <div class="container py-4">
     <div class="glass-card animate-fade-in-up">
-        <!-- Notification Area -->
-        {% if messages %}
-        <div class="mb-4">
-            {% for message in messages %}
-            <div class="alert alert-{{ message.tags }} alert-dismissible fade show bg-opacity-10 border-0" role="alert">
-                {{ message }}
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-            {% endfor %}
-        </div>
-        {% endif %}
-
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h2 class="mb-0">Knowledge Base Manager</h2>
             <a href="{% url 'diagnoses:index' %}" class="btn btn-outline-light btn-sm rounded-pill">
@@ -55,7 +43,7 @@
                                 <div class="mb-3">
                                     <textarea name="description" class="form-control form-control-sm" placeholder="Description"></textarea>
                                 </div>
-                                <button type="submit" class="btn btn-success btn-sm w-100">Save Disease</button>
+                                <button type="submit" class="btn btn-modern btn-sm w-100">Save Disease</button>
                             </form>
                         </div>
                         <div class="table-responsive">
@@ -126,37 +114,73 @@
 
                         <div class="collapse mb-4" id="add-rule-form">
                             {% if user.is_superuser %}
-                            <div class="alert alert-warning border-0 bg-warning bg-opacity-10 text-warning small mb-3">
-                                <i class="bi bi-exclamation-triangle-fill me-2"></i>
-                                <strong>Warning:</strong> establishing an inference rule directly modifies the AI's diagnostic logic. Ensure the selected symptoms are medically relevant to the disease.
+                            <div class="row g-4">
+                                <!-- Configuration Panel -->
+                                <div class="col-lg-7">
+                                    <form method="post" id="rule-architect-form" class="p-4 border border-secondary rounded glass-card-input h-100">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="action" value="add_rule">
+                                        
+                                        <div class="mb-4">
+                                            <h5 class="text-accent mb-3"><i class="bi bi-gear-fill me-2"></i>Rule Configuration</h5>
+                                            <label class="form-label small text-muted">1. Target Disease</label>
+                                            <select name="disease" id="rule-disease" class="form-select mb-3" required>
+                                                <option value="" disabled selected>Select a disease...</option>
+                                                {% for d in diseases %}
+                                                <option value="{{ d.id }}" data-name="{{ d.name }}">{{ d.name }}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+
+                                        <div class="mb-4">
+                                            <label class="form-label small text-muted d-flex justify-content-between">
+                                                <span>2. Define Symptoms Pathway</span>
+                                                <span class="text-accent" id="selected-count">0 selected</span>
+                                            </label>
+                                            <div class="symptom-selection-grid p-3 bg-dark bg-opacity-50 rounded border border-secondary" style="max-height: 250px; overflow-y: auto;">
+                                                <div class="row g-2">
+                                                    {% for s in symptoms %}
+                                                    <div class="col-6 col-md-4">
+                                                        <div class="architect-pill">
+                                                            <input type="checkbox" name="symptoms" value="{{ s.id }}" id="rule-sym-{{ s.id }}" data-name="{{ s.name }}">
+                                                            <label for="rule-sym-{{ s.id }}">{{ s.name }}</label>
+                                                        </div>
+                                                    </div>
+                                                    {% endfor %}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="mb-3 form-check p-3 bg-warning bg-opacity-10 rounded border border-warning border-opacity-25">
+                                            <input type="checkbox" class="form-check-input ms-0 me-2" name="expert_verified" id="verify-check" required>
+                                            <label class="form-check-label small text-warning fw-bold" for="verify-check">
+                                                I confirm this rule follows clinical diagnosis standards.
+                                            </label>
+                                        </div>
+                                        <button type="submit" id="submit-rule" class="btn btn-modern w-100 py-3" disabled>
+                                            <i class="bi bi-shield-check me-2"></i>Establish Diagnostic Rule
+                                        </button>
+                                    </form>
+                                </div>
+
+                                <!-- Architect Preview Panel -->
+                                <div class="col-lg-5">
+                                    <div class="p-4 rounded glass-card-preview h-100 border border-secondary d-flex flex-column">
+                                        <h5 class="text-muted small text-uppercase fw-bold mb-4">Rule Logic Preview</h5>
+                                        
+                                        <div class="preview-content flex-grow-1">
+                                            <div id="logic-preview" class="p-3 bg-dark bg-opacity-25 rounded border border-secondary border-dashed mb-3 h-100 min-height-200">
+                                                <p class="text-muted small fst-italic mt-5 text-center">Start configuring to see logic mapping...</p>
+                                            </div>
+                                        </div>
+
+                                        <div class="mt-4 alert alert-info border-0 bg-info bg-opacity-10 text-info small mb-0">
+                                            <i class="bi bi-info-circle-fill me-2"></i>
+                                            Rules are cumulative. Adding more symptoms increases the specificity of the diagnosis.
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
-                            <form method="post" class="p-3 border border-secondary rounded glass-card">
-                                {% csrf_token %}
-                                <input type="hidden" name="action" value="add_rule">
-                                <div class="mb-3">
-                                    <label class="form-label small text-muted">Select Disease</label>
-                                    <select name="disease" class="form-select form-select-sm" required>
-                                        {% for d in diseases %}
-                                        <option value="{{ d.id }}">{{ d.name }}</option>
-                                        {% endfor %}
-                                    </select>
-                                </div>
-                                <div class="mb-3">
-                                    <label class="form-label small text-muted">Select Symptoms (Hold Ctrl/Cmd to multi-select)</label>
-                                    <select name="symptoms" class="form-select form-select-sm" multiple required style="height: 120px;">
-                                        {% for s in symptoms %}
-                                        <option value="{{ s.id }}">{{ s.name }}</option>
-                                        {% endfor %}
-                                    </select>
-                                </div>
-                                <div class="mb-3 form-check">
-                                    <input type="checkbox" class="form-check-input" name="expert_verified" id="verify-check" required>
-                                    <label class="form-check-label small text-muted" for="verify-check">
-                                        I verify that these symptoms follow medical diagnostic standards.
-                                    </label>
-                                </div>
-                                <button type="submit" id="submit-rule" class="btn btn-modern btn-sm w-100" disabled>Establish Rule</button>
-                            </form>
                             {% else %}
                             <div class="alert alert-danger border-0 bg-danger bg-opacity-10 text-danger small mb-0">
                                 <i class="bi bi-shield-lock-fill me-2"></i>
@@ -216,15 +240,75 @@
     --bs-table-color: var(--text-main);
     --bs-table-border-color: var(--border-color);
 }
+.glass-card-input { background: rgba(0,0,0,0.2); backdrop-filter: blur(5px); }
+.glass-card-preview { background: rgba(20, 184, 166, 0.03); }
+.architect-pill { position: relative; }
+.architect-pill input { position: absolute; opacity: 0; width: 0; height: 0; }
+.architect-pill label {
+    display: block;
+    padding: 0.4rem 0.6rem;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.2s;
+}
+.architect-pill input:checked + label {
+    background: var(--accent-primary);
+    color: white;
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 10px var(--accent-glow);
+}
+.border-dashed { border-style: dashed !important; }
+.min-height-200 { min-height: 200px; }
+.rule-logic-view { font-family: 'Outfit', sans-serif; }
 </style>
 
 <script>
     const verifyCheck = document.getElementById('verify-check');
     const submitBtn = document.getElementById('submit-rule');
-    if (verifyCheck && submitBtn) {
-        verifyCheck.addEventListener('change', function() {
-            submitBtn.disabled = !this.checked;
-        });
+    const ruleDisease = document.getElementById('rule-disease');
+    const symptomChecks = document.querySelectorAll('.architect-pill input');
+    const logicPreview = document.getElementById('logic-preview');
+    const selectedCount = document.getElementById('selected-count');
+
+    function updateArchitectPreview() {
+        const diseaseName = ruleDisease.options[ruleDisease.selectedIndex]?.dataset.name || "[Disease]";
+        const selectedSymptoms = Array.from(symptomChecks)
+                                    .filter(i => i.checked)
+                                    .map(i => `<span class="text-accent fw-bold">${i.dataset.name}</span>`);
+        
+        selectedCount.innerText = `${selectedSymptoms.length} selected`;
+
+        if (selectedSymptoms.length > 0 || diseaseName !== "[Disease]") {
+            let html = `<div class="rule-logic-view">
+                <div class="mb-2"><span class="badge bg-secondary opacity-50">IF</span></div>
+                <div class="ps-3 border-start border-secondary py-2">
+                    ${selectedSymptoms.join(' <span class="small opacity-50 mx-1">AND</span> ')}
+                </div>
+                <div class="my-2"><span class="badge bg-secondary opacity-50">THEN</span></div>
+                <div class="ps-3 border-start border-accent py-2">
+                    <span class="text-white h5 fw-bold">${diseaseName}</span>
+                </div>
+            </div>`;
+            logicPreview.innerHTML = html;
+        } else {
+            logicPreview.innerHTML = '<p class="text-muted small fst-italic mt-5 text-center">Start configuring to see logic mapping...</p>';
+        }
+
+        if (verifyCheck && submitBtn) {
+            submitBtn.disabled = !(verifyCheck.checked && selectedSymptoms.length > 0 && ruleDisease.value);
+        }
     }
+
+    if (verifyCheck) verifyCheck.addEventListener('change', updateArchitectPreview);
+    if (ruleDisease) ruleDisease.addEventListener('change', updateArchitectPreview);
+    symptomChecks.forEach(i => i.addEventListener('change', updateArchitectPreview));
+
+    // Initial check for submission restriction
+    updateArchitectPreview();
 </script>
 {% endblock %}

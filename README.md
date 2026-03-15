@@ -39,8 +39,17 @@ medical_expert_system/
 Ensure you have Python 3.9+ installed. It is recommended to use a virtual environment:
 
 ```bash
+# macOS/Linux
 python3 -m venv env
-source env/bin/activate  # macOS/Linux
+source env/bin/activate
+
+# Windows (Command Prompt)
+python -m venv env
+env\Scripts\activate
+
+# Windows (PowerShell)
+python -m venv env
+.\env\Scripts\Activate.ps1
 ```
 
 ### 2. Dependency Installation
@@ -68,7 +77,11 @@ python3 manage.py shell -c "from diagnoses.seed import seed_data; seed_data.run(
 Run the development server and navigate to `http://127.0.0.1:8000/diagnose/`:
 
 ```bash
+# macOS/Linux
 python3 manage.py runserver
+
+# Windows
+python manage.py runserver
 ```
 
 ## 🎓 Academic Context
